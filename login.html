@@ -1,95 +1,569 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CodeRefine — Login</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login · AI Code Review Agent</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg:#080c14;--surface:#0f1623;--border:#1e2d45;--accent:#00d4ff;--accent2:#7c3aed;--text:#e2e8f0;--muted:#64748b;--danger:#f87171;
+      --bg:       #020408;
+      --surface:  #080f1a;
+      --card:     #0b1525;
+      --border:   #0e2040;
+      --accent:   #00d4ff;
+      --accent2:  #00ff88;
+      --glow:     rgba(0,212,255,0.25);
+      --text:     #c9d8e8;
+      --muted:    #3a5570;
+      --error:    #ff4757;
     }
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
-    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;animation:gridPan 20s linear infinite;pointer-events:none;}
-    @keyframes gridPan{to{background-position:40px 40px;}}
-    .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:0.15;pointer-events:none;animation:float 8s ease-in-out infinite;}
-    .orb-1{width:400px;height:400px;background:var(--accent);top:-100px;left:-100px;}
-    .orb-2{width:300px;height:300px;background:var(--accent2);bottom:-80px;right:-80px;animation-delay:-4s;}
-    @keyframes float{0%,100%{transform:translate(0,0);}50%{transform:translate(20px,-20px);}}
-    .card{position:relative;width:420px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:48px 40px;box-shadow:0 0 60px rgba(0,212,255,0.05),0 20px 60px rgba(0,0,0,0.5);animation:slideUp 0.6s cubic-bezier(0.16,1,0.3,1) both;}
-    @keyframes slideUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
-    .card::before{content:'';position:absolute;top:0;left:40px;right:40px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
-    .logo{text-align:center;margin-bottom:36px;}
-    .logo-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:16px;box-shadow:0 0 30px rgba(0,212,255,0.3);}
-    .logo h1{font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.5px;}
-    .logo p{color:var(--muted);font-size:13px;font-family:'Space Mono',monospace;margin-top:4px;}
-    .form-group{margin-bottom:20px;}
-    label{display:block;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-    .input-wrap{position:relative;}
-    .input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;}
-    input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px 12px 42px;color:var(--text);font-size:15px;font-family:'Space Mono',monospace;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
-    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,0.1);}
-    .btn-login{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),#0099cc);border:none;border-radius:10px;color:#080c14;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:0.5px;cursor:pointer;margin-top:8px;transition:opacity 0.2s,transform 0.1s,box-shadow 0.2s;box-shadow:0 4px 20px rgba(0,212,255,0.3);}
-    .btn-login:hover{opacity:0.9;box-shadow:0 6px 30px rgba(0,212,255,0.5);}
-    .btn-login:active{transform:scale(0.98);}
-    .error-msg{color:var(--danger);font-size:12px;margin-top:6px;display:none;font-family:'Space Mono',monospace;}
-    .footer{text-align:center;margin-top:28px;font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;}
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+    }
+
+    /* ── Animated grid background ── */
+    .bg-grid {
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridDrift 20s linear infinite;
+    }
+    @keyframes gridDrift {
+      0%   { background-position: 0 0; }
+      100% { background-position: 40px 40px; }
+    }
+
+    /* ── Glowing orbs ── */
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(80px); z-index: 0; pointer-events: none;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(0,212,255,0.12), transparent 70%);
+      top: -150px; left: -100px;
+      animation: float1 8s ease-in-out infinite;
+    }
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(0,255,136,0.08), transparent 70%);
+      bottom: -100px; right: -80px;
+      animation: float2 10s ease-in-out infinite;
+    }
+    @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,40px)} }
+    @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-20px,-30px)} }
+
+    /* ── Scanline overlay ── */
+    .scanlines {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+    }
+
+    /* ── Layout ── */
+    .page {
+      position: relative; z-index: 2;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 480px 1fr;
+      grid-template-rows: 1fr;
+      align-items: center;
+    }
+
+    /* ── Left panel: branding ── */
+    .left-panel {
+      grid-column: 1;
+      padding: 60px;
+      display: flex; flex-direction: column; justify-content: center;
+      animation: slideInLeft 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+    }
+    @keyframes slideInLeft {
+      from { opacity:0; transform:translateX(-40px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+
+    .brand-tag {
+      font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 24px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .brand-tag::before {
+      content: ''; width: 32px; height: 1px; background: var(--accent);
+    }
+
+    .brand-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(28px, 3vw, 42px);
+      font-weight: 900;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    .brand-title span { color: var(--accent); }
+
+    .brand-desc {
+      font-size: 13px; line-height: 1.8;
+      color: var(--muted); max-width: 340px;
+      margin-bottom: 40px;
+    }
+
+    .feature-list { display: flex; flex-direction: column; gap: 12px; }
+    .feature-item {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 12px; color: var(--muted);
+      animation: fadeFeature 0.5s ease forwards;
+      opacity: 0;
+    }
+    .feature-item:nth-child(1) { animation-delay: 0.6s; }
+    .feature-item:nth-child(2) { animation-delay: 0.8s; }
+    .feature-item:nth-child(3) { animation-delay: 1.0s; }
+    @keyframes fadeFeature { to { opacity: 1; } }
+
+    .feature-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent2); flex-shrink: 0;
+      box-shadow: 0 0 8px var(--accent2);
+    }
+
+    /* ── Login card ── */
+    .login-card {
+      grid-column: 2;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      position: relative;
+      animation: cardRise 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s both;
+      box-shadow:
+        0 0 0 1px rgba(0,212,255,0.05),
+        0 40px 80px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    @keyframes cardRise {
+      from { opacity:0; transform:translateY(24px) scale(0.97); }
+      to   { opacity:1; transform:translateY(0) scale(1); }
+    }
+
+    /* Top accent bar */
+    .card-accent {
+      position: absolute; top: 0; left: 40px; right: 40px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    /* Corner decorations */
+    .corner {
+      position: absolute; width: 12px; height: 12px;
+      border-color: var(--accent); border-style: solid; opacity: 0.5;
+    }
+    .corner-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-radius: 3px 0 0 0; }
+    .corner-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; border-radius: 0 3px 0 0; }
+    .corner-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; border-radius: 0 0 0 3px; }
+    .corner-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-radius: 0 0 3px 0; }
+
+    .card-header { text-align: center; margin-bottom: 36px; }
+
+    .robot-icon {
+      font-size: 40px; display: block; margin-bottom: 16px;
+      animation: robotPulse 3s ease-in-out infinite;
+    }
+    @keyframes robotPulse {
+      0%,100% { filter: drop-shadow(0 0 8px rgba(0,212,255,0.3)); }
+      50%      { filter: drop-shadow(0 0 20px rgba(0,212,255,0.7)); }
+    }
+
+    .card-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 18px; font-weight: 700;
+      color: #fff; margin-bottom: 6px;
+    }
+    .card-subtitle { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 20px; }
+
+    .form-label {
+      display: block; font-size: 10px;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    .input-wrap { position: relative; }
+
+    .input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 14px; color: var(--muted); pointer-events: none;
+      transition: color 0.2s;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 13px 14px 13px 42px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      transition: all 0.2s;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--accent);
+      background: rgba(0,212,255,0.04);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+    }
+    input:focus + .input-icon { color: var(--accent); }
+    input::placeholder { color: var(--muted); }
+
+    /* Toggle password */
+    .toggle-pw {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 14px; padding: 4px;
+      transition: color 0.2s;
+    }
+    .toggle-pw:hover { color: var(--accent); }
+
+    /* Remember + Forgot */
+    .form-extras {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .remember {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; color: var(--muted); cursor: pointer;
+    }
+    .remember input { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
+    .forgot { font-size: 11px; color: var(--accent); text-decoration: none; opacity: 0.8; }
+    .forgot:hover { opacity: 1; text-decoration: underline; }
+
+    /* Error message */
+    .error-msg {
+      display: none;
+      background: rgba(255,71,87,0.1);
+      border: 1px solid rgba(255,71,87,0.3);
+      color: var(--error);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 11px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .error-msg.show { display: block; animation: shake 0.4s ease; }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)}
+      20%,60%{transform:translateX(-6px)}
+      40%,80%{transform:translateX(6px)}
+    }
+
+    /* Submit button */
+    .btn-login {
+      width: 100%;
+      background: linear-gradient(135deg, #0099bb, var(--accent), #00aad4);
+      background-size: 200% 200%;
+      border: none; border-radius: 8px;
+      padding: 14px;
+      color: #000;
+      font-family: 'Orbitron', monospace;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative; overflow: hidden;
+    }
+    .btn-login::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+      transform: translateX(-100%);
+      transition: transform 0.5s;
+    }
+    .btn-login:hover::before { transform: translateX(100%); }
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,212,255,0.4);
+      background-position: right center;
+    }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-login .loader {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Divider */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 24px 0; font-size: 10px; color: var(--muted); letter-spacing: 2px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* Register link */
+    .register-link {
+      text-align: center; font-size: 11px; color: var(--muted);
+    }
+    .register-link a { color: var(--accent); text-decoration: none; }
+    .register-link a:hover { text-decoration: underline; }
+
+    /* Status bar */
+    .status-bar {
+      position: absolute; bottom: -48px; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-size: 10px; color: var(--muted); letter-spacing: 1px;
+    }
+    .status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent2); box-shadow: 0 0 6px var(--accent2); animation: blink 2s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Right panel: decorative terminal */
+    .right-panel {
+      grid-column: 3;
+      padding: 60px 40px 60px 20px;
+      display: flex; flex-direction: column; justify-content: center;
+      animation: slideInRight 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both;
+    }
+    @keyframes slideInRight {
+      from { opacity:0; transform:translateX(40px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+
+    .terminal {
+      background: #050d18;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      max-width: 300px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .terminal-bar {
+      background: var(--surface);
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .t-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .t-dot-r { background: #ff5f57; }
+    .t-dot-y { background: #febc2e; }
+    .t-dot-g { background: #28c840; }
+    .terminal-title { font-size: 10px; color: var(--muted); margin-left: 6px; letter-spacing: 1px; }
+
+    .terminal-body { padding: 16px; font-size: 11px; line-height: 1.9; }
+    .t-line { opacity: 0; animation: typeLine 0.3s ease forwards; }
+    .t-line:nth-child(1)  { animation-delay: 1.0s; }
+    .t-line:nth-child(2)  { animation-delay: 1.4s; }
+    .t-line:nth-child(3)  { animation-delay: 1.8s; }
+    .t-line:nth-child(4)  { animation-delay: 2.2s; }
+    .t-line:nth-child(5)  { animation-delay: 2.6s; }
+    .t-line:nth-child(6)  { animation-delay: 3.0s; }
+    .t-line:nth-child(7)  { animation-delay: 3.4s; }
+    @keyframes typeLine { to { opacity: 1; } }
+
+    .t-prompt { color: var(--accent2); }
+    .t-cmd    { color: var(--text); }
+    .t-output { color: var(--muted); padding-left: 14px; }
+    .t-success { color: var(--accent); padding-left: 14px; }
+    .t-cursor {
+      display: inline-block; width: 7px; height: 13px;
+      background: var(--accent); vertical-align: middle;
+      animation: cursorBlink 1s step-end infinite;
+    }
+    @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; grid-template-rows: auto; overflow: auto; }
+      .left-panel, .right-panel { display: none; }
+      .login-card { grid-column: 1; margin: 40px auto; width: 90%; max-width: 440px; }
+      body, html { overflow: auto; }
+      .page { height: auto; min-height: 100vh; padding: 20px; }
+    }
   </style>
 </head>
 <body>
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="card">
-    <div class="logo">
-      <div class="logo-icon">🤖</div>
-      <h1>CodeRefine</h1>
-      <p>AI-Powered Code Analysis &amp; Rewriting</p>
-    </div>
 
-    <div class="form-group">
-      <label>Email</label>
-      <div class="input-wrap">
-        <span class="input-icon">✉</span>
-        <input type="email" id="email" placeholder="your@email.com" autocomplete="off" />
-      </div>
-    </div>
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="scanlines"></div>
 
-    <div class="form-group">
-      <label>Password</label>
-      <div class="input-wrap">
-        <span class="input-icon">🔒</span>
-        <input type="password" id="password" placeholder="••••••••" />
-      </div>
-      <p class="error-msg" id="errorMsg">❌ Please enter your email and password.</p>
-    </div>
+<div class="page">
 
-    <button class="btn-login" onclick="handleLogin()">→ Sign In</button>
-    <div class="footer">Powered by Groq + Llama 3.3 70B</div>
+  <!-- Left: Branding -->
+  <div class="left-panel">
+    <div class="brand-tag">AI-Powered Platform</div>
+    <h1 class="brand-title">Code Review<br><span>&</span> Rewrite<br>Agent</h1>
+    <p class="brand-desc">
+      Real-time code analysis powered by Groq's ultra-fast inference
+      and Llama 3.3 70B. Review, refactor, and ship production-ready code.
+    </p>
+    <div class="feature-list">
+      <div class="feature-item"><div class="feature-dot"></div> Detects bugs, security flaws & performance issues</div>
+      <div class="feature-item"><div class="feature-dot"></div> Auto-rewrites clean, documented, optimized code</div>
+      <div class="feature-item"><div class="feature-dot"></div> Supports Python, JS, Java, C++, Go & more</div>
+    </div>
   </div>
 
-  <script>
-    function handleLogin() {
-      const email = document.getElementById('email').value.trim();
-      const pass  = document.getElementById('password').value.trim();
-      const err   = document.getElementById('errorMsg');
-      const btn   = document.querySelector('.btn-login');
+  <!-- Center: Login Card -->
+  <div class="login-card">
+    <div class="card-accent"></div>
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
 
-      // Only check that both fields are filled in — any value works
-      if (email !== '' && pass !== '') {
-        err.style.display = 'none';
-        btn.textContent = '✓ Redirecting...';
-        setTimeout(() => { window.location.href = '/app'; }, 600);
-      } else {
-        err.style.display = 'block';
-      }
+    <div class="card-header">
+      <span class="robot-icon">🤖</span>
+      <div class="card-title">WELCOME BACK</div>
+      <div class="card-subtitle">AUTHENTICATE TO CONTINUE</div>
+    </div>
+
+    <div class="error-msg" id="error-msg">
+      ⚠ Invalid credentials. Please try again.
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="username">Username</label>
+      <div class="input-wrap">
+        <input type="text" id="username" placeholder="Enter your username" autocomplete="username"/>
+        <span class="input-icon">⌘</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">Password</label>
+      <div class="input-wrap">
+        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"/>
+        <span class="input-icon">🔒</span>
+        <button class="toggle-pw" type="button" onclick="togglePassword()" id="toggle-icon">👁</button>
+      </div>
+    </div>
+
+    <div class="form-extras">
+      <label class="remember">
+        <input type="checkbox" id="remember"/> Remember me
+      </label>
+      <a href="#" class="forgot">Forgot password?</a>
+    </div>
+
+    <button class="btn-login" id="btn-login" onclick="handleLogin()">
+      <span id="btn-text">ACCESS SYSTEM</span>
+      <div class="loader" id="btn-loader"></div>
+    </button>
+
+    <div class="divider">OR</div>
+
+    <div class="register-link">
+      Don't have an account? <a href="#">Create one</a>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      SECURE CONNECTION ESTABLISHED
+    </div>
+  </div>
+
+  <!-- Right: Terminal decoration -->
+  <div class="right-panel">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="t-dot t-dot-r"></div>
+        <div class="t-dot t-dot-y"></div>
+        <div class="t-dot t-dot-g"></div>
+        <span class="terminal-title">groq-agent ~ review</span>
+      </div>
+      <div class="terminal-body">
+        <div class="t-line"><span class="t-prompt">❯ </span><span class="t-cmd">python main.py</span></div>
+        <div class="t-line"><span class="t-output">Initializing Groq client...</span></div>
+        <div class="t-line"><span class="t-output">Loading Llama 3.3 70B model...</span></div>
+        <div class="t-line"><span class="t-success">✓ Model ready</span></div>
+        <div class="t-line"><span class="t-output">Starting FastAPI server...</span></div>
+        <div class="t-line"><span class="t-success">✓ Running on port 8000</span></div>
+        <div class="t-line"><span class="t-prompt">❯ </span><span class="t-cursor"></span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── Toggle password visibility ──
+  function togglePassword() {
+    const pw = document.getElementById('password');
+    const icon = document.getElementById('toggle-icon');
+    if (pw.type === 'password') { pw.type = 'text'; icon.textContent = '🙈'; }
+    else { pw.type = 'password'; icon.textContent = '👁'; }
+  }
+
+  // ── Handle login ──
+  function handleLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errBox   = document.getElementById('error-msg');
+    const btn      = document.getElementById('btn-login');
+    const btnText  = document.getElementById('btn-text');
+    const loader   = document.getElementById('btn-loader');
+
+    // Hide previous error
+    errBox.classList.remove('show');
+
+    if (!username || !password) {
+      errBox.textContent = '⚠ Please enter both username and password.';
+      errBox.classList.add('show');
+      return;
     }
 
-    // Allow pressing Enter key to login
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter') handleLogin();
-    });
-  </script>
+    // Loading state
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    loader.style.display  = 'block';
+
+    // Simulate auth (replace with real API call)
+    setTimeout(() => {
+      btn.disabled = false;
+      btnText.style.display = 'block';
+      loader.style.display  = 'none';
+
+      // Demo: accept any non-empty credentials → redirect to tool
+      // Replace this logic with your real authentication
+      if (username.length >= 3 && password.length >= 4) {
+        btnText.textContent = '✓ ACCESS GRANTED';
+        btn.style.background = 'linear-gradient(135deg, #00ff88, #00cc6a)';
+        setTimeout(() => { window.location.href = '/'; }, 800);
+      } else {
+        errBox.textContent = '⚠ Invalid credentials. Please try again.';
+        errBox.classList.remove('show');
+        void errBox.offsetWidth; // reflow to restart animation
+        errBox.classList.add('show');
+      }
+    }, 1500);
+  }
+
+  // ── Enter key support ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
+</script>
 </body>
 </html>
